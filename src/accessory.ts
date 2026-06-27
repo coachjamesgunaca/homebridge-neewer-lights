@@ -42,7 +42,7 @@ export class NeewerLightAccessory {
   ) {
     const { Service, Characteristic } = this.platform;
 
-    this.state = {
+    const defaultState: DesiredState = {
       on: false,
       brightness: 100,
       mode: 'cct',
@@ -50,6 +50,13 @@ export class NeewerLightAccessory {
       hue: 0,
       saturation: 0,
     };
+
+    this.state = {
+      ...defaultState,
+      ...(this.accessory.context.state ?? {}),
+    };
+
+    this.accessory.context.state = { ...this.state };
 
     this.accessory
       .getService(Service.AccessoryInformation)!
@@ -108,7 +115,10 @@ export class NeewerLightAccessory {
 
   private async setOn(value: CharacteristicValue): Promise<void> {
     this.state.on = value as boolean;
+    this.saveState();
+
     await this.send(powerCommand(this.state.on));
+
     // On power-on, re-assert the active mode so brightness/color are restored.
     if (this.state.on) {
       this.scheduleModeWrite();
@@ -117,25 +127,40 @@ export class NeewerLightAccessory {
 
   private async setBrightness(value: CharacteristicValue): Promise<void> {
     this.state.brightness = Math.max(1, value as number);
+    this.saveState();
+
     this.scheduleModeWrite();
   }
 
   private async setColorTemperature(value: CharacteristicValue): Promise<void> {
     this.state.kelvin = miredToKelvin(value as number);
     this.state.mode = 'cct';
+    this.saveState();
+
     this.scheduleModeWrite();
   }
 
   private async setHue(value: CharacteristicValue): Promise<void> {
     this.state.hue = value as number;
     this.state.mode = 'hsi';
+    this.saveState();
+
     this.scheduleModeWrite();
   }
 
   private async setSaturation(value: CharacteristicValue): Promise<void> {
     this.state.saturation = value as number;
     this.state.mode = 'hsi';
+    this.saveState();
+
     this.scheduleModeWrite();
+  }
+
+  // --- state persistence ---------------------------------------------------
+
+  private saveState(): void {
+    this.accessory.context.state = { ...this.state };
+    this.platform.api.updatePlatformAccessories([this.accessory]);
   }
 
   // --- write pipeline ------------------------------------------------------
@@ -145,6 +170,7 @@ export class NeewerLightAccessory {
     if (this.writeTimer) {
       clearTimeout(this.writeTimer);
     }
+
     this.writeTimer = setTimeout(() => this.flush(false), this.debounceMs);
   }
 
@@ -153,9 +179,11 @@ export class NeewerLightAccessory {
       clearTimeout(this.writeTimer);
       this.writeTimer = undefined;
     }
+
     if (!this.state.on && !force) {
       return;
     }
+
     void this.send(this.currentModeCommand());
   }
 
@@ -163,6 +191,7 @@ export class NeewerLightAccessory {
     if (this.state.mode === 'hsi' && this.config.rgb) {
       return hsiCommand(this.state.hue, this.state.saturation, this.state.brightness);
     }
+
     return cctCommand(
       this.state.brightness,
       this.state.kelvin,
@@ -174,10 +203,11 @@ export class NeewerLightAccessory {
   private async send(data: Uint8Array): Promise<void> {
     if (!this.transport.isReady(this.config.key)) {
       this.platform.log.debug(
-        `"${this.config.name}" not connected yet; command queued for next connection`,
+        `"${this.config.name}" not connected yet; command skipped`,
       );
       return;
     }
+
     try {
       await this.transport.write(this.config.key, data);
     } catch (err) {
