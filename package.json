@@ -1,0 +1,50 @@
+{
+  "displayName": "Homebridge Neewer Lights",
+  "name": "homebridge-neewer-lights",
+  "version": "1.0.0",
+  "description": "Homebridge platform plugin to control Neewer Bluetooth LE lights (RGB panels) from Apple Home on iOS and macOS.",
+  "license": "MIT",
+  "author": "coachjamesgunaca",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coachjamesgunaca/homebridge-neewer-lights.git"
+  },
+  "bugs": {
+    "url": "https://github.com/coachjamesgunaca/homebridge-neewer-lights/issues"
+  },
+  "engines": {
+    "homebridge": ">=1.6.0 || >=2.0.0-beta.0",
+    "node": ">=18.0.0"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "config.schema.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rm -rf ./dist && tsc",
+    "watch": "npm run build && nodemon",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "neewer",
+    "neewer-lights",
+    "bluetooth",
+    "ble",
+    "homekit",
+    "rgb",
+    "led"
+  ],
+  "dependencies": {
+    "@abandonware/noble": "^1.9.2-26"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "homebridge": "^1.8.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "pluginAlias": "NeewerLightsPlatform",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "Control Neewer Bluetooth LE lights from Apple Home. Each light is matched by its advertised Bluetooth name and/or its peripheral id, then exposed as a HomeKit lightbulb with on/off, brightness, color temperature, and (for RGB models) hue/saturation.",
+  "footerDisplay": "Run Homebridge with `debug: true` once to log every Neewer peripheral the host sees (name + id), then copy the values into each light's `bleName` / `bleId`.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Neewer Lights",
+        "required": true
+      },
+      "transport": {
+        "title": "Transport",
+        "type": "string",
+        "default": "ble",
+        "oneOf": [
+          { "title": "Bluetooth LE (real lights)", "enum": ["ble"] },
+          { "title": "Mock (testing in Apple Home, no hardware)", "enum": ["mock"] }
+        ],
+        "required": true
+      },
+      "scanTimeoutSeconds": {
+        "title": "Scan timeout (seconds)",
+        "type": "integer",
+        "default": 0,
+        "minimum": 0,
+        "maximum": 300,
+        "description": "How long to actively scan for lights on startup. 0 = scan continuously until all configured lights are found."
+      },
+      "writeDebounceMs": {
+        "title": "Write debounce (ms)",
+        "type": "integer",
+        "default": 120,
+        "minimum": 0,
+        "maximum": 2000,
+        "description": "Coalesce rapid HomeKit slider changes into a single BLE write."
+      },
+      "keepAliveSeconds": {
+        "title": "Keep-alive interval (seconds)",
+        "type": "integer",
+        "default": 30,
+        "minimum": 0,
+        "maximum": 600,
+        "description": "Re-assert connection / re-scan for dropped lights at this interval. 0 disables."
+      },
+      "debug": {
+        "title": "Debug logging",
+        "type": "boolean",
+        "default": false
+      },
+      "lights": {
+        "title": "Lights",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Name (shown in Apple Home)",
+              "type": "string",
+              "required": true
+            },
+            "bleName": {
+              "title": "Bluetooth name match",
+              "type": "string",
+              "description": "Case-insensitive substring of the advertised name, e.g. 'RGB660 PRO' or 'NEEWER-RGB176'. Leave blank if matching only by id."
+            },
+            "bleId": {
+              "title": "Peripheral id (optional, exact)",
+              "type": "string",
+              "description": "The host-specific peripheral UUID (macOS) shown in debug logs. Use this to disambiguate multiple identical lights."
+            },
+            "rgb": {
+              "title": "Supports RGB (hue/saturation)",
+              "type": "boolean",
+              "default": true
+            },
+            "minKelvin": {
+              "title": "Minimum color temperature (K)",
+              "type": "integer",
+              "default": 3200,
+              "minimum": 2000,
+              "maximum": 10000
+            },
+            "maxKelvin": {
+              "title": "Maximum color temperature (K)",
+              "type": "integer",
+              "default": 5600,
+              "minimum": 2000,
+              "maximum": 10000
+            }
+          }
+        }
+      }
+    }
+  }
+}
